@@ -1,0 +1,7 @@
+{
+  "name": "Smart Notes AI",
+  "description": "A powerful AI-driven tool to convert lecture audio into structured, intelligent study notes featuring summaries, key concepts, and action items.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
