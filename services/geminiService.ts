@@ -9,23 +9,24 @@ export const processLectureMedia = async (
 ): Promise<SmartNotes> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Use pro for deep analysis if requested, otherwise flash
   const modelName = deepAnalysis ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
-
   const isDocument = mimeType === 'application/pdf';
 
   const prompt = `
-    You are an expert academic research assistant. 
-    Analyze the provided lecture ${isDocument ? 'document (PDF)' : 'media (audio/video)'} and generate structured study notes.
+    You are an expert academic research assistant and educator. 
+    Analyze the provided lecture ${isDocument ? 'document (PDF)' : 'media (audio/video)'} and generate comprehensive study materials.
     
-    1. Title: A professional academic title.
-    2. Summary: 2-3 detailed paragraphs highlighting the main thesis or lesson goals.
-    3. Key Concepts: Detailed list of terms, definitions, and core formulas or theories.
-    4. Action Items: List any deadlines, homework, assignments, or specific follow-up tasks mentioned.
-    5. Transcription/Content Extract: ${isDocument ? 'A clean, structured extraction of the document text' : 'A clean, word-for-word transcription of the audio'}.
-    6. Search: Use Google Search to find 3-5 high-quality external web resources (academic papers, educational videos, or tutorials) that provide deeper context on the topics discussed.
+    REQUIRED OUTPUT STRUCTURE (JSON):
+    1. Title: Professional academic title.
+    2. Summary: 2-3 detailed paragraphs.
+    3. Key Concepts: Detailed list of terms and definitions.
+    4. Action Items: Deadlines or homework mentioned.
+    5. Transcription: Clean, punctuated text.
+    6. Quiz: 5 multiple-choice questions (question, options[], answer).
+    7. Flashcards: 5 high-impact conceptual flashcards (front, back).
+    8. Search: Find 3-5 high-quality external web resources related to the topic.
     
-    The response must be in JSON format.
+    The response must be strict JSON.
   `;
 
   try {
@@ -60,9 +61,32 @@ export const processLectureMedia = async (
               type: Type.ARRAY, 
               items: { type: Type.STRING } 
             },
-            transcription: { type: Type.STRING }
+            transcription: { type: Type.STRING },
+            quiz: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  question: { type: Type.STRING },
+                  options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  answer: { type: Type.STRING }
+                },
+                required: ["question", "options", "answer"]
+              }
+            },
+            flashcards: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  front: { type: Type.STRING },
+                  back: { type: Type.STRING }
+                },
+                required: ["front", "back"]
+              }
+            }
           },
-          required: ["title", "summary", "keyConcepts", "actionItems", "transcription"]
+          required: ["title", "summary", "keyConcepts", "actionItems", "transcription", "quiz", "flashcards"]
         }
       }
     });
@@ -70,7 +94,6 @@ export const processLectureMedia = async (
     const resultText = response.text || "{}";
     const parsed = JSON.parse(resultText);
 
-    // Extract grounding chunks if available
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     const sources: GroundingSource[] = groundingChunks
       .filter((chunk: any) => chunk.web)
@@ -87,6 +110,6 @@ export const processLectureMedia = async (
     } as SmartNotes;
   } catch (error) {
     console.error("Gemini Processing Error:", error);
-    throw new Error("Failed to process lecture material. Ensure your file is valid and the API key is active.");
+    throw new Error("Failed to generate smart notes. Ensure file content is readable.");
   }
 };

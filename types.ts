@@ -1,4 +1,15 @@
 
+export interface QuizItem {
+  question: string;
+  options: string[];
+  answer: string;
+}
+
+export interface Flashcard {
+  front: string;
+  back: string;
+}
+
 export interface GroundingSource {
   title: string;
   uri: string;
@@ -12,6 +23,8 @@ export interface SmartNotes {
   keyConcepts: string[];
   actionItems: string[];
   transcription: string;
+  quiz?: QuizItem[];
+  flashcards?: Flashcard[];
   sources?: GroundingSource[];
 }
 
@@ -24,4 +37,4 @@ export enum AppStatus {
   ERROR = 'ERROR'
 }
 
-export type PageView = 'HOME' | 'HISTORY' | 'HOW_IT_WORKS' | 'RESOURCES' | 'SETTINGS';
+export type PageView = 'HOME' | 'HISTORY' | 'HOW_IT_WORKS' | 'RESOURCES' | 'SETTINGS' | 'STUDY_MODE';
